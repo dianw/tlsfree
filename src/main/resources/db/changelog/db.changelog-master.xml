@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+		http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+	<changeSet id="1" author="dianw">
+		<createTable tableName="blob_store">
+			<column name="id" type="bigint">
+				<constraints primaryKey="true" nullable="false" />
+			</column>
+			<column name="created_by" type="varchar(50)">
+				<constraints nullable="false" />
+			</column>
+			<column name="created_date" type="datetime">
+				<constraints nullable="false" />
+			</column>
+			<column name="last_modified_by" type="varchar(50)">
+				<constraints nullable="false" />
+			</column>
+			<column name="last_modified_date" type="datetime">
+				<constraints nullable="false" />
+			</column>
+			<column name="status" type="int">
+				<constraints nullable="false" />
+			</column>
+			<column name="created_by_client" type="varchar(100)">
+				<constraints nullable="false" />
+			</column>
+			<column name="last_modified_by_client" type="varchar(100)">
+				<constraints nullable="false" />
+			</column>
+
+			<column name="content_type" type="varchar(50)" />
+			<column name="data_blob" type="longblob">
+				<constraints nullable="false" />
+			</column>
+			<column name="hash" type="varchar(70)" />
+			<column name="size" type="bigint" />
+		</createTable>
+	
+		<createTable tableName="account">
+			<column name="id" type="bigint">
+				<constraints primaryKey="true" nullable="false" />
+			</column>
+			<column name="created_by" type="varchar(50)">
+				<constraints nullable="false" />
+			</column>
+			<column name="created_date" type="datetime">
+				<constraints nullable="false" />
+			</column>
+			<column name="last_modified_by" type="varchar(50)">
+				<constraints nullable="false" />
+			</column>
+			<column name="last_modified_date" type="datetime">
+				<constraints nullable="false" />
+			</column>
+			<column name="status" type="int">
+				<constraints nullable="false" />
+			</column>
+			<column name="created_by_client" type="varchar(100)">
+				<constraints nullable="false" />
+			</column>
+			<column name="last_modified_by_client" type="varchar(100)">
+				<constraints nullable="false" />
+			</column>
+
+			<column name="account_non_expired" type="bit(1)" />
+			<column name="account_non_locked" type="bit(1)" />
+			<column name="administrator" type="bit(1)" />
+			<column name="credentials_non_expired" type="bit(1)" />
+			<column name="email" type="varchar(50)">
+				<constraints unique="true" nullable="false" />
+			</column>
+			<column name="enabled" type="bit(1)" />
+			<column name="password" type="varchar(500)">
+				<constraints nullable="false" />
+			</column>
+			<column name="private_key_blob_id" type="bigint" />
+			<column name="public_key_blob_id" type="bigint" />
+			<column name="username" type="varchar(50)">
+				<constraints unique="true" nullable="false" />
+			</column>
+		</createTable>
+
+		<addForeignKeyConstraint constraintName="fk_account_private_key_blob_id"
+			baseTableName="account" baseColumnNames="private_key_blob_id"
+			referencedTableName="blob_store" referencedColumnNames="id" />
+
+		<addForeignKeyConstraint constraintName="fk_account_public_key_blob_id"
+			baseTableName="account" baseColumnNames="public_key_blob_id"
+			referencedTableName="blob_store" referencedColumnNames="id" />
+
+		<createTable tableName="acme_registration">
+			<column name="id" type="bigint">
+				<constraints primaryKey="true" nullable="false" />
+			</column>
+			<column name="created_by" type="varchar(50)">
+				<constraints nullable="false" />
+			</column>
+			<column name="created_date" type="datetime">
+				<constraints nullable="false" />
+			</column>
+			<column name="last_modified_by" type="varchar(50)">
+				<constraints nullable="false" />
+			</column>
+			<column name="last_modified_date" type="datetime">
+				<constraints nullable="false" />
+			</column>
+			<column name="status" type="int">
+				<constraints nullable="false" />
+			</column>
+			<column name="created_by_client" type="varchar(100)">
+				<constraints nullable="false" />
+			</column>
+			<column name="last_modified_by_client" type="varchar(100)">
+				<constraints nullable="false" />
+			</column>
+
+			<column name="accept_agreement" type="bit(1)">
+				<constraints nullable="false" />
+			</column>
+			<column name="account_id" type="bigint">
+				<constraints nullable="false" />
+			</column>
+			<column name="agreement_uri" type="longtext">
+				<constraints nullable="false"/>
+			</column>
+			<column name="public_key_blob_id" type="bigint">
+				<constraints nullable="false"/>
+			</column>
+			<column name="registration_uri" type="longtext">
+				<constraints nullable="false"/>
+			</column>
+		</createTable>
+
+		<addForeignKeyConstraint constraintName="fk_acme_registration_account_id"
+			baseTableName="acme_registration" baseColumnNames="account_id"
+			referencedTableName="account" referencedColumnNames="id" />
+
+		<addForeignKeyConstraint constraintName="fk_acme_registration_public_key_blob_id"
+			baseTableName="acme_registration" baseColumnNames="public_key_blob_id"
+			referencedTableName="blob_store" referencedColumnNames="id" />
+
+		<createTable tableName="acme_authorization">
+			<column name="id" type="bigint">
+				<constraints primaryKey="true" nullable="false" />
+			</column>
+			<column name="created_by" type="varchar(50)">
+				<constraints nullable="false" />
+			</column>
+			<column name="created_date" type="datetime">
+				<constraints nullable="false" />
+			</column>
+			<column name="last_modified_by" type="varchar(50)">
+				<constraints nullable="false" />
+			</column>
+			<column name="last_modified_date" type="datetime">
+				<constraints nullable="false" />
+			</column>
+			<column name="status" type="int">
+				<constraints nullable="false" />
+			</column>
+			<column name="created_by_client" type="varchar(100)">
+				<constraints nullable="false" />
+			</column>
+			<column name="last_modified_by_client" type="varchar(100)">
+				<constraints nullable="false" />
+			</column>
+
+			<column name="acme_status" type="varchar(50)">
+				<constraints nullable="false" />
+			</column>
+			<column name="authorization_uri" type="longtext">
+				<constraints nullable="false" />
+			</column>
+			<column name="domain" type="varchar(255)">
+				<constraints nullable="false" />
+			</column>
+			<column name="expires" type="datetime">
+				<constraints nullable="false" />
+			</column>
+			<column name="registration_id" type="bigint" />
+		</createTable>
+
+		<addForeignKeyConstraint constraintName="fk_acme_authorization_registration_id"
+			baseTableName="acme_authorization" baseColumnNames="registration_id"
+			referencedTableName="acme_registration" referencedColumnNames="id" />
+
+		<createTable tableName="acme_challenge">
+			<column name="id" type="bigint">
+				<constraints primaryKey="true" nullable="false" />
+			</column>
+			<column name="created_by" type="varchar(50)">
+				<constraints nullable="false" />
+			</column>
+			<column name="created_date" type="datetime">
+				<constraints nullable="false" />
+			</column>
+			<column name="last_modified_by" type="varchar(50)">
+				<constraints nullable="false" />
+			</column>
+			<column name="last_modified_date" type="datetime">
+				<constraints nullable="false" />
+			</column>
+			<column name="status" type="int">
+				<constraints nullable="false" />
+			</column>
+			<column name="created_by_client" type="varchar(100)">
+				<constraints nullable="false" />
+			</column>
+			<column name="last_modified_by_client" type="varchar(100)">
+				<constraints nullable="false" />
+			</column>
+
+			<column name="acme_status" type="varchar(50)">
+				<constraints nullable="false" />
+			</column>
+			<column name="authorization_id" type="bigint">
+				<constraints nullable="false" />
+			</column>
+			<column name="challenge_uri" type="longtext">
+				<constraints nullable="false" />
+			</column>
+			<column name="key_" type="varchar(500)">
+				<constraints nullable="false" />
+			</column>
+			<column name="type_" type="varchar(50)">
+				<constraints nullable="false" />
+			</column>
+			<column name="value_" type="varchar(500)">
+				<constraints nullable="false" />
+			</column>
+			<column name="validated_date" type="datetime">
+				<constraints nullable="false" />
+			</column>
+		</createTable>
+
+		<addForeignKeyConstraint constraintName="fk_acme_challenge_authorization_id"
+			baseTableName="acme_challenge" baseColumnNames="authorization_id"
+			referencedTableName="acme_authorization" referencedColumnNames="id" />
+	</changeSet>
+</databaseChangeLog>
