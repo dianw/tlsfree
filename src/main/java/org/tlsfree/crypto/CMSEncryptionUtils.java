@@ -35,7 +35,7 @@ import org.bouncycastle.operator.OutputEncryptor;
 
 /**
  * Utility class for encrypting and decrypting CMS enveloped-data content
- * 
+ *
  * @author dianw
  *
  */
@@ -45,7 +45,7 @@ public final class CMSEncryptionUtils {
 
 	/**
 	 * Encrypt data into ASN.1 encoded of CMS enveloped-data
-	 * 
+	 *
 	 * @param data
 	 * @param subjectKeyId
 	 * @param encryptionKey
@@ -67,7 +67,7 @@ public final class CMSEncryptionUtils {
 
 	/**
 	 * Decrypt ASN.1 encoded CMS enveloped-data
-	 * 
+	 *
 	 * @param data
 	 * @param subjectKeyId
 	 * @param decryptionKey

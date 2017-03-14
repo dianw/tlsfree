@@ -24,17 +24,17 @@ import org.bouncycastle.cms.CMSException;
 
 /**
  * Utility class for encrypting and decrypting private key
- * 
+ *
  * @author dianw
  *
  */
 public final class PrivateKeyEncryptionUtils {
-	public PrivateKeyEncryptionUtils() {
+	private PrivateKeyEncryptionUtils() {
 	}
 
 	/**
 	 * Encrypt private key
-	 * 
+	 *
 	 * @param encryptorKey
 	 * @param privateKey
 	 * @return encrypted private key
@@ -47,7 +47,7 @@ public final class PrivateKeyEncryptionUtils {
 
 	/**
 	 * Decrypt private key
-	 * 
+	 *
 	 * @param decryptorKey
 	 * @param encryptedPrivateKey
 	 * @return key pair
@@ -60,7 +60,7 @@ public final class PrivateKeyEncryptionUtils {
 
 	/**
 	 * Decrypt private key
-	 * 
+	 *
 	 * @param decryptorKey
 	 * @param encryptedPrivateKey
 	 * @return key pair

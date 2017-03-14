@@ -1,4 +1,4 @@
-package org.tlsfree.accountregistration.imp;
+package org.tlsfree.accountregistration.impl;
 
 import java.io.IOException;
 import java.net.URI;
@@ -15,6 +15,7 @@ import org.shredzone.acme4j.exception.AcmeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 import org.tlsfree.account.Account;
 import org.tlsfree.account.AccountService;
 import org.tlsfree.accountregistration.AccountRegistrationService;
@@ -25,6 +26,7 @@ import org.tlsfree.crypto.RSAKeyUtils;
 import org.tlsfree.registration.Registration;
 import org.tlsfree.registration.RegistrationService;
 
+@Service
 public class DefaultAccountRegistrationService implements AccountRegistrationService {
 	private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -47,8 +49,8 @@ public class DefaultAccountRegistrationService implements AccountRegistrationSer
 		boolean newAccount = account.getPrivateKey() == null;
 		Session session = getAcmeSessionByAccountId(accountId);
 
-		org.shredzone.acme4j.Registration reg = null;
-		Registration registration = null;
+		org.shredzone.acme4j.Registration reg;
+		Registration registration;
 		if (newAccount) {
 			logger.debug("Registering new let's encrypt account {}", account.getId());
 			account = generateAccountKeyPair(accountId);
@@ -103,7 +105,7 @@ public class DefaultAccountRegistrationService implements AccountRegistrationSer
 		return keyPair;
 	}
 
-	public Account generateAccountKeyPair(Long accountId) throws CMSException, IOException {
+	private Account generateAccountKeyPair(Long accountId) throws CMSException, IOException {
 		Account account = accountService.getAccountById(accountId);
 		logger.debug("Generating key pair for account {}", accountId);
 		KeyPair keyPair = RSAKeyUtils.generateKeyPair();

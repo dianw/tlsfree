@@ -19,7 +19,8 @@ public class DefaultAccountService implements AccountService {
 	@Override
 	public Account getAccountById(Long id) {
 		Account account = accountRepository.findOne(id);
-		if (account == null) throw new AccountNotFoundException();
+		if (account == null)
+			throw new AccountNotFoundException();
 		return account;
 	}
 
