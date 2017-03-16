@@ -13,21 +13,24 @@ public final class SecurityUtils {
 
 	public static Account getCurrentAccount() {
 		AccountUserDetails accountUserDetails = getCurrentAccountUserDetails();
-		if (accountUserDetails == null) return null;
+		if (accountUserDetails == null)
+			return null;
 
 		return accountUserDetails.getAccount();
 	}
 
 	public static Registration getCurrentRegistration() {
 		AccountUserDetails accountUserDetails = getCurrentAccountUserDetails();
-		if (accountUserDetails == null) return null;
+		if (accountUserDetails == null)
+			return null;
 
 		return accountUserDetails.getRegistration();
 	}
 
 	public static Session getCurrentAcmeSession() {
 		AccountUserDetails accountUserDetails = getCurrentAccountUserDetails();
-		if (accountUserDetails == null) return null;
+		if (accountUserDetails == null)
+			return null;
 
 		return accountUserDetails.getAcmeSession();
 	}
@@ -35,7 +38,8 @@ public final class SecurityUtils {
 	private static AccountUserDetails getCurrentAccountUserDetails() {
 		SecurityContext securityContext = SecurityContextHolder.getContext();
 		Authentication authentication = securityContext.getAuthentication();
-		if (authentication == null) return null;
+		if (authentication == null)
+			return null;
 
 		if (authentication.getPrincipal() instanceof AccountUserDetails) {
 			return (AccountUserDetails) authentication.getPrincipal();

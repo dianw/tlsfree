@@ -16,8 +16,10 @@
 package org.tlsfree.certificate;
 
 import javax.persistence.Column;
+import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.Table;
 
 import org.tlsfree.account.Account;
 import org.tlsfree.blob.BlobStore;
@@ -26,6 +28,8 @@ import org.tlsfree.registration.Registration;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+@Entity
+@Table(name = "account_certificate")
 public class AccountCertificate extends AbstractAuditingEntity {
 	@ManyToOne
 	@JoinColumn(name = "account_id")
