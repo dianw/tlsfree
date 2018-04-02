@@ -1,17 +1,19 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>org.codenergic.theskeleton</groupId>
-	<artifactId>theskeleton-server</artifactId>
-	<version>0.12.0-SNAPSHOT</version>
-	<name>TheSkeleton Server</name>
+	<groupId>org.enkrip</groupId>
+	<artifactId>enkrip-server</artifactId>
+	<version>0.1.0-SNAPSHOT</version>
+	<name>Enkrip Server</name>
 	<description>
-		TheSkeleton is the full-stack project template used to help developer building modern web application quickly.
+		
 	</description>
 
 	<scm>
-		<connection>scm:git:ssh://git@github.com/codenergic/theskeleton.git</connection>
-		<developerConnection>scm:git:ssh://git@github.com/codenergic/theskeleton.git</developerConnection>
-		<url>https://github.com/codenergic/theskeleton</url>
+		<connection>scm:git:ssh://git@github.com/dianw/tlsfree.git</connection>
+		<developerConnection>scm:git:ssh://git@github.com/dianw/tlsfree.git</developerConnection>
+		<url>https://github.com/dianw/tlsfree</url>
 		<tag>HEAD</tag>
 	</scm>
 
@@ -23,6 +25,7 @@
 	</licenses>
 
 	<properties>
+		<acme4j.version>2.0</acme4j.version>
 		<bootstrap.version>4.0.0-alpha.6-1</bootstrap.version>
 		<commons-lang3.version>3.5</commons-lang3.version>
 		<fauxflake-core.version>1.1.0</fauxflake-core.version>
@@ -114,7 +117,6 @@
 		<dependency>
 			<groupId>org.springframework.social</groupId>
 			<artifactId>spring-social-security</artifactId>
-			<version>${spring-social-security.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.social</groupId>
@@ -210,9 +212,7 @@
 				</exclusion>
 				<exclusion>
 					<groupId>org.springframework.boot</groupId>
-					<artifactId>
-						spring-boot-starter-data-redis
-					</artifactId>
+					<artifactId>spring-boot-starter-data-redis</artifactId>
 				</exclusion>
 			</exclusions>
 		</dependency>
@@ -271,6 +271,17 @@
 			<artifactId>auto-value</artifactId>
 			<version>1.5</version>
 			<scope>provided</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.shredzone.acme4j</groupId>
+			<artifactId>acme4j-client</artifactId>
+			<version>${acme4j.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.microsoft.azure</groupId>
+			<artifactId>azure-keyvault</artifactId>
+			<version>1.1-beta-1</version>
 		</dependency>
 	</dependencies>
 
@@ -407,18 +418,6 @@
 					</execution>
 				</executions>
 			</plugin>
-			<plugin>
-				<groupId>com.spotify</groupId>
-				<artifactId>dockerfile-maven-plugin</artifactId>
-				<version>${docker-maven-plugin.version}</version>
-				<configuration>
-					<repository>codenergic/theskeleton</repository>
-					<tag>latest</tag>
-					<buildArgs>
-						<JAR_FILE>${project.build.finalName}.jar</JAR_FILE>
-					</buildArgs>
-				</configuration>
-			</plugin>
 		</plugins>
 		<resources>
 			<resource>
@@ -437,12 +436,4 @@
 			</resource>
 		</resources>
 	</build>
-
-	<distributionManagement>
-		<repository>
-			<id>bintray-codenergic-theskeleton</id>
-			<name>codenergic-theskeleton</name>
-			<url>https://api.bintray.com/maven/codenergic/theskeleton/theskeleton-server/;publish=1</url>
-		</repository>
-	</distributionManagement>
 </project>
