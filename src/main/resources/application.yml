@@ -1,3 +1,7 @@
+enkrip:
+  master-key:
+    generate-on-startup: true
+    location:
 info:
   app:
     encoding: "@project.build.sourceEncoding@"
