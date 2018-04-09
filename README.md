@@ -1,8 +1,8 @@
-[![Build Status](https://travis-ci.org/codenergic/theskeleton.svg?branch=master)](https://travis-ci.org/codenergic/theskeleton)
-[![codecov](https://codecov.io/gh/codenergic/theskeleton/branch/master/graph/badge.svg)](https://codecov.io/gh/codenergic/theskeleton)
+[![Build Status](https://travis-ci.org/dianw/tlsfree.svg?branch=master)](https://travis-ci.org/dianw/tlsfree)
+[![codecov](https://codecov.io/gh/dianw/tlsfree/branch/master/graph/badge.svg)](https://codecov.io/gh/dianw/tlsfree)
 [![Quality Gate](https://sonarcloud.io/api/badges/gate?key=org.codenergic.theskeleton:theskeleton-server)](https://sonarcloud.io/dashboard/index/org.codenergic.theskeleton:theskeleton-server)
 
-# TheSkeleton
+# Enkrip
 The skeleton is the project starter based on spring boot.
 *This project is still work in progress.*
 
@@ -20,7 +20,7 @@ You can find the ```.jar``` file in the ```target``` directory.
 
 ## License
 ```
-Copyright 2016 Codenergic
+Copyright 2016 Dian Aditya
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
