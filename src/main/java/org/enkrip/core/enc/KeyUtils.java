@@ -1,26 +1,14 @@
 package org.enkrip.core.enc;
 
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.KeyFactory;
-import java.security.KeyPair;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.SecureRandom;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.Validate;
+
+import javax.crypto.*;
+import javax.crypto.spec.IvParameterSpec;
+import java.security.*;
 import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.RSAPublicKeySpec;
-
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.KeyGenerator;
-import javax.crypto.NoSuchPaddingException;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.IvParameterSpec;
-
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.Validate;
 
 public class KeyUtils {
 	private static final String ASYMMETRIC_ENCRYPTION_ALGORITHM = "RSA/ECB/OAEPWithSHA-256AndMGF1Padding";
@@ -35,7 +23,7 @@ public class KeyUtils {
 		RANDOM.nextBytes(bytes);
 		return bytes;
 	}
-	
+
 	public static SecretKey generateAESSecretKey(int keySize) {
 		try {
 			KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
@@ -46,7 +34,7 @@ public class KeyUtils {
 		}
 	}
 
-	public static final KeyPair generateKeyPairFromPrivateKey(PrivateKey privateKey) {
+	public static KeyPair generateKeyPairFromPrivateKey(PrivateKey privateKey) {
 		Validate.isInstanceOf(RSAPrivateCrtKey.class, privateKey, "Only RSA private key are currently supported");
 		RSAPrivateCrtKey rsaPrivateKey = (RSAPrivateCrtKey) privateKey;
 		try {
@@ -59,7 +47,7 @@ public class KeyUtils {
 		}
 	}
 
-	public static final PrivateKey unwrapPrivateKeyKey(byte[] keyToBeUnwrapped, String wrappedKeyAlg, SecretKey decryptionKey) {
+	public static PrivateKey unwrapPrivateKeyKey(byte[] keyToBeUnwrapped, String wrappedKeyAlg, SecretKey decryptionKey) {
 		try {
 			byte[] iv = ArrayUtils.subarray(keyToBeUnwrapped, 0, 16);
 			byte[] keyToUnwrap = ArrayUtils.subarray(keyToBeUnwrapped, 16, keyToBeUnwrapped.length);
@@ -73,7 +61,7 @@ public class KeyUtils {
 		}
 	}
 
-	public static final SecretKey unwrapSecretKey(byte[] keyToBeUnwrapped, String wrappedKeyAlg, PrivateKey decryptionKey) {
+	public static SecretKey unwrapSecretKey(byte[] keyToBeUnwrapped, String wrappedKeyAlg, PrivateKey decryptionKey) {
 		try {
 			Cipher cipher = Cipher.getInstance(ASYMMETRIC_ENCRYPTION_ALGORITHM);
 			cipher.init(Cipher.UNWRAP_MODE, decryptionKey);
@@ -85,7 +73,7 @@ public class KeyUtils {
 		}
 	}
 
-	public static final byte[] wrapPrivateKey(PrivateKey keyToBeWrapped, SecretKey encryptionKey) {
+	public static byte[] wrapPrivateKey(PrivateKey keyToBeWrapped, SecretKey encryptionKey) {
 		try {
 			byte[] iv = nextRandomBytes(16);
 			Cipher cipher = Cipher.getInstance(SYMMETRIC_ENCRYPTION_ALGORITHM);
@@ -99,7 +87,7 @@ public class KeyUtils {
 		}
 	}
 
-	public static final byte[] wrapSecretKey(SecretKey keyToBeWrapped, PublicKey encryptionKey) {
+	public static byte[] wrapSecretKey(SecretKey keyToBeWrapped, PublicKey encryptionKey) {
 		try {
 			Cipher cipher = Cipher.getInstance(ASYMMETRIC_ENCRYPTION_ALGORITHM);
 			cipher.init(Cipher.WRAP_MODE, encryptionKey);
