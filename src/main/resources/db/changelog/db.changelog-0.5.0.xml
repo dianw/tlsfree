@@ -1,0 +1,60 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+	<changeSet id="1001" author="dianw">
+		<createTable tableName="enkrip_user_account">
+			<column name="id" type="varchar(255)">
+				<constraints primaryKey="true" nullable="false"/>
+			</column>
+			<column name="status" type="integer">
+				<constraints nullable="false"/>
+			</column>
+			<column name="created_by_client" type="varchar(255)"/>
+			<column name="created_by" type="varchar(255)"/>
+			<column name="created_date" type="datetime"/>
+			<column name="last_modified_by_client" type="varchar(255)"/>
+			<column name="last_modified_by" type="varchar(255)"/>
+			<column name="last_modified_date" type="datetime"/>
+			<column name="user_id" type="varchar(255)">
+				<constraints nullable="false" foreignKeyName="enkrip_user_account_user_id"
+							 references="ts_user(id)" />
+			</column>
+			<column name="account_location" type="clob">
+				<constraints nullable="false" />
+			</column>
+			<column name="account_key" type="blob">
+				<constraints nullable="false" />
+			</column>
+			<column name="account_public_key" type="blob">
+				<constraints nullable="false" />
+			</column>
+			<column name="account_key_secret" type="blob">
+				<constraints nullable="false" />
+			</column>
+		</createTable>
+	</changeSet>
+	<changeSet id="1002" author="dianw">
+		<createTable tableName="enkrip_user_account_contact">
+			<column name="id" type="varchar(255)">
+				<constraints primaryKey="true" nullable="false"/>
+			</column>
+			<column name="status" type="integer">
+				<constraints nullable="false"/>
+			</column>
+			<column name="created_by_client" type="varchar(255)"/>
+			<column name="created_by" type="varchar(255)"/>
+			<column name="created_date" type="datetime"/>
+			<column name="last_modified_by_client" type="varchar(255)"/>
+			<column name="last_modified_by" type="varchar(255)"/>
+			<column name="last_modified_date" type="datetime"/>
+			<column name="user_account_id" type="varchar(255)">
+				<constraints nullable="false" foreignKeyName="user_account_contact_user_account_id"
+							 references="enkrip_user_account(id)" />
+			</column>
+			<column name="email" type="varchar(500)">
+				<constraints nullable="false" />
+			</column>
+		</createTable>
+		<addUniqueConstraint tableName="enkrip_user_account_contact" columnNames="user_account_id, email" />
+	</changeSet>
+</databaseChangeLog>

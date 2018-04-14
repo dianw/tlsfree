@@ -283,11 +283,6 @@
 			<artifactId>acme4j-utils</artifactId>
 			<version>${acme4j.version}</version>
 		</dependency>
-		<dependency>
-			<groupId>com.microsoft.azure</groupId>
-			<artifactId>azure-keyvault</artifactId>
-			<version>1.0.0</version>
-		</dependency>
 	</dependencies>
 
 	<dependencyManagement>

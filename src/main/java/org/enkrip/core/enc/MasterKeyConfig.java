@@ -1,5 +1,12 @@
 package org.enkrip.core.enc;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.security.KeyPair;
+
 import org.apache.commons.lang3.StringUtils;
 import org.shredzone.acme4j.util.KeyPairUtils;
 import org.slf4j.Logger;
@@ -10,9 +17,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
-
-import java.io.*;
-import java.security.KeyPair;
 
 @Configuration
 public class MasterKeyConfig {

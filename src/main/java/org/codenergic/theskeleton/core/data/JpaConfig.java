@@ -16,6 +16,8 @@
 package org.codenergic.theskeleton.core.data;
 
 import org.codenergic.theskeleton.Application;
+import org.enkrip.Enkrip;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.auditing.DateTimeProvider;
@@ -25,7 +27,8 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 @Configuration
 @EnableJpaAuditing(auditorAwareRef = "auditorAware", dateTimeProviderRef = "dateTimeProvider")
-@EnableJpaRepositories(basePackageClasses = Application.class)
+@EnableJpaRepositories(basePackageClasses = {Application.class, Enkrip.class})
+@EntityScan(basePackageClasses = {Application.class, Enkrip.class})
 public class JpaConfig {
 	@Bean
 	public DateTimeProvider dateTimeProvider() {

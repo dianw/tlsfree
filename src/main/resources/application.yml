@@ -1,4 +1,6 @@
 enkrip:
+  acme:
+    server-uri: acme://letsencrypt.org/staging
   master-key:
     generate-on-startup: true
     location:
