@@ -1,5 +1,11 @@
 package org.enkrip.account;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
@@ -27,11 +33,6 @@ import org.shredzone.acme4j.util.KeyPairUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 public class UserAccountServiceTest {
 	private UserAccountService userAccountService;
 	private KeyPair keyPair = KeyPairUtils.createKeyPair(1024);
@@ -44,7 +45,8 @@ public class UserAccountServiceTest {
 
 	private UserAccountEntity createUserAccount() {
 		return userAccountService.createUserAccount(keyPair, new UserAccountEntity(), KeyPairUtils.createKeyPair(512))
-			.setUser(new UserEntity().setId("123"));
+			.setUser(new UserEntity().setId("123"))
+			.setAccountLocation("http://testing");
 	}
 
 	@Before
@@ -136,6 +138,8 @@ public class UserAccountServiceTest {
 				return null;
 			}
 		});
+		when(acmeSession.login(any(), any())).then(invocation ->
+			new Login(invocation.getArgument(0), invocation.getArgument(1), acmeSession));
 	}
 
 	@Test
@@ -156,6 +160,14 @@ public class UserAccountServiceTest {
 		assertThat(contact.getEmail()).isEqualTo("123");
 		assertThat(contact.getUserAccount()).isNull();
 		verify(userAccountContactRepository).findByUserAccountId("123", null);
+	}
+
+	@Test
+	public void testFindLoginByUserAccount() throws AcmeException {
+		when(userAccountRepository.findOne("123")).thenReturn(createUserAccount());
+		Login login = userAccountService.findLoginByUserAccount("123", "123");
+		assertThat(login.getSession()).isEqualTo(acmeSession);
+		verify(userAccountRepository).findOne("123");
 	}
 
 	@Test

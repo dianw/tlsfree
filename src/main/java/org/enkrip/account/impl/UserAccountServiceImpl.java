@@ -13,6 +13,7 @@ import org.enkrip.account.UserAccountRepository;
 import org.enkrip.account.UserAccountService;
 import org.shredzone.acme4j.Account;
 import org.shredzone.acme4j.AccountBuilder;
+import org.shredzone.acme4j.Login;
 import org.shredzone.acme4j.Session;
 import org.shredzone.acme4j.exception.AcmeException;
 import org.shredzone.acme4j.util.KeyPairUtils;
@@ -40,9 +41,7 @@ public class UserAccountServiceImpl implements UserAccountService {
 	@Override
 	@Transactional
 	public void deactivateAccount(String userId, String accountId) throws AcmeException {
-		UserAccountEntity userAccount = findUserAccountById(accountId);
-		Validate.notNull(userAccount);
-		Validate.isTrue(userId.equals(userAccount.getUser().getId()));
+		UserAccountEntity userAccount = findUserAccountById(userId, accountId);
 		userAccount.getAccount().deactivate();
 		userAccountContactRepository.deleteByUserAccountId(accountId);
 		userAccountRepository.delete(accountId);
@@ -54,10 +53,23 @@ public class UserAccountServiceImpl implements UserAccountService {
 	}
 
 	@Override
+	public Login findLoginByUserAccount(String userId, String accountId) throws AcmeException {
+		UserAccountEntity userAccount = findUserAccountById(userId, accountId);
+		return findLoginByUserAccount(masterKey, acmeSession, userAccount);
+	}
+
+	@Override
 	public UserAccountEntity findUserAccountById(String accountId) throws AcmeException {
 		UserAccountEntity userAccount = userAccountRepository.findOne(accountId);
 		Validate.notNull(userAccount);
-		return userAccount.setAccount(createAcmeAccount(masterKey, acmeSession, userAccount));
+		return userAccount.setAccount(findLoginByUserAccount(masterKey, acmeSession, userAccount).getAccount());
+	}
+	
+	private UserAccountEntity findUserAccountById(String userId, String accountId) throws AcmeException {
+		UserAccountEntity userAccount = findUserAccountById(accountId);
+		Validate.notNull(userAccount);
+		Validate.isTrue(userId.equals(userAccount.getUser().getId()));
+		return userAccount;
 	}
 
 	@Override
@@ -89,9 +101,7 @@ public class UserAccountServiceImpl implements UserAccountService {
 	@Override
 	@Transactional
 	public UserAccountEntity updateUserAccountContacts(String userId, String accountId, List<UserAccountContactEntity> contacts) throws AcmeException {
-		UserAccountEntity userAccount = findUserAccountById(accountId);
-		Validate.notNull(userAccount);
-		Validate.isTrue(userId.equals(userAccount.getUser().getId()));
+		UserAccountEntity userAccount = findUserAccountById(userId, accountId);
 		userAccountContactRepository.deleteByUserAccountId(accountId);
 		Account.EditableAccount editableAcmeAccount = userAccount.getAccount().modify();
 		for (UserAccountContactEntity contact : contacts) {
@@ -106,9 +116,7 @@ public class UserAccountServiceImpl implements UserAccountService {
 	@Override
 	@Transactional
 	public UserAccountEntity updateUserAccountKeyPair(String userId, String accountId) throws AcmeException {
-		UserAccountEntity userAccount = findUserAccountById(accountId);
-		Validate.notNull(userAccount);
-		Validate.isTrue(userId.equals(userAccount.getUser().getId()));
+		UserAccountEntity userAccount = findUserAccountById(userId, accountId);
 		KeyPair keyPair = KeyPairUtils.createKeyPair(4096);
 		userAccount.getAccount().changeKey(keyPair);
 		createUserAccount(masterKey, userAccount, keyPair);
