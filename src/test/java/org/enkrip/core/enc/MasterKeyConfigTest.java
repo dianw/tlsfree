@@ -1,16 +1,17 @@
 package org.enkrip.core.enc;
 
-import org.junit.Test;
-import org.shredzone.acme4j.util.KeyPairUtils;
-import org.springframework.core.io.DefaultResourceLoader;
-import org.springframework.core.io.ResourceLoader;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
 import java.security.KeyPair;
 import java.util.UUID;
+
+import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.pkcs.PKCSException;
+import org.junit.Test;
+import org.springframework.core.io.DefaultResourceLoader;
+import org.springframework.core.io.ResourceLoader;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -20,7 +21,7 @@ public class MasterKeyConfigTest {
 	private ResourceLoader resourceLoader = new DefaultResourceLoader();
 
 	@Test
-	public void testMasterKeyPairGenerateOnStartup() throws IOException {
+	public void testMasterKeyPairGenerateOnStartup() throws IOException, OperatorCreationException, PKCSException {
 		MasterKeyConfig.MasterKeyConfigProperties properties = masterKeyConfig.configurationProperties();
 		properties.setGenerateOnStartup(true);
 		KeyPair keyPair = masterKeyConfig.masterKeyPair(properties, resourceLoader);
@@ -39,10 +40,10 @@ public class MasterKeyConfigTest {
 	}
 
 	@Test
-	public void testMasterKeyPairLoadMaster() throws IOException {
+	public void testMasterKeyPairLoadMaster() throws IOException, OperatorCreationException, PKCSException {
 		File tempFile = File.createTempFile("enkrip-test-" + UUID.randomUUID().toString(), ".pem");
 		try (Writer keyWriter = new FileWriter(tempFile)) {
-			KeyPairUtils.writeKeyPair(KeyPairUtils.createKeyPair(512), keyWriter);
+			KeyUtils.writeKeyPair(keyWriter, KeyUtils.generateRSAKeyPair(512), null);
 		}
 		MasterKeyConfig.MasterKeyConfigProperties properties = new MasterKeyConfig.MasterKeyConfigProperties();
 		properties.setGenerateOnStartup(false);

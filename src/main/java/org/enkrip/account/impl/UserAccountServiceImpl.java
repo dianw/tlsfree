@@ -11,12 +11,12 @@ import org.enkrip.account.UserAccountContactRepository;
 import org.enkrip.account.UserAccountEntity;
 import org.enkrip.account.UserAccountRepository;
 import org.enkrip.account.UserAccountService;
+import org.enkrip.core.enc.KeyUtils;
 import org.shredzone.acme4j.Account;
 import org.shredzone.acme4j.AccountBuilder;
 import org.shredzone.acme4j.Login;
 import org.shredzone.acme4j.Session;
 import org.shredzone.acme4j.exception.AcmeException;
-import org.shredzone.acme4j.util.KeyPairUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -64,7 +64,7 @@ public class UserAccountServiceImpl implements UserAccountService {
 		Validate.notNull(userAccount);
 		return userAccount.setAccount(findLoginByUserAccount(masterKey, acmeSession, userAccount).getAccount());
 	}
-	
+
 	private UserAccountEntity findUserAccountById(String userId, String accountId) throws AcmeException {
 		UserAccountEntity userAccount = findUserAccountById(accountId);
 		Validate.notNull(userAccount);
@@ -80,7 +80,7 @@ public class UserAccountServiceImpl implements UserAccountService {
 	@Override
 	@Transactional
 	public UserAccountEntity registerNewUserAccount(UserEntity user, List<UserAccountContactEntity> contacts) throws AcmeException {
-		KeyPair keyPair = KeyPairUtils.createKeyPair(4096);
+		KeyPair keyPair = KeyUtils.generateRSAKeyPair(4096);
 		UserAccountEntity userAccount = createUserAccount(masterKey, new UserAccountEntity(), keyPair)
 			.setUser(user);
 		AccountBuilder acmeAccountBuilder = new AccountBuilder()
@@ -117,7 +117,7 @@ public class UserAccountServiceImpl implements UserAccountService {
 	@Transactional
 	public UserAccountEntity updateUserAccountKeyPair(String userId, String accountId) throws AcmeException {
 		UserAccountEntity userAccount = findUserAccountById(userId, accountId);
-		KeyPair keyPair = KeyPairUtils.createKeyPair(4096);
+		KeyPair keyPair = KeyUtils.generateRSAKeyPair(4096);
 		userAccount.getAccount().changeKey(keyPair);
 		createUserAccount(masterKey, userAccount, keyPair);
 		return userAccount;

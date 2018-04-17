@@ -1,11 +1,5 @@
 package org.enkrip.account;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
@@ -17,6 +11,7 @@ import java.util.List;
 
 import org.codenergic.theskeleton.user.UserEntity;
 import org.enkrip.account.impl.UserAccountServiceImpl;
+import org.enkrip.core.enc.KeyUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -29,13 +24,18 @@ import org.shredzone.acme4j.exception.AcmeException;
 import org.shredzone.acme4j.provider.AcmeProvider;
 import org.shredzone.acme4j.toolbox.JSON;
 import org.shredzone.acme4j.toolbox.JSONBuilder;
-import org.shredzone.acme4j.util.KeyPairUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 public class UserAccountServiceTest {
 	private UserAccountService userAccountService;
-	private KeyPair keyPair = KeyPairUtils.createKeyPair(1024);
+	private KeyPair keyPair = KeyUtils.generateRSAKeyPair(1024);
 	@Mock
 	private Session acmeSession;
 	@Mock
@@ -44,7 +44,7 @@ public class UserAccountServiceTest {
 	private UserAccountContactRepository userAccountContactRepository;
 
 	private UserAccountEntity createUserAccount() {
-		return userAccountService.createUserAccount(keyPair, new UserAccountEntity(), KeyPairUtils.createKeyPair(512))
+		return userAccountService.createUserAccount(keyPair, new UserAccountEntity(), KeyUtils.generateRSAKeyPair(512))
 			.setUser(new UserEntity().setId("123"))
 			.setAccountLocation("http://testing");
 	}

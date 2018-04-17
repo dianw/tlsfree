@@ -8,7 +8,8 @@ import java.io.Reader;
 import java.security.KeyPair;
 
 import org.apache.commons.lang3.StringUtils;
-import org.shredzone.acme4j.util.KeyPairUtils;
+import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.pkcs.PKCSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -29,25 +30,25 @@ public class MasterKeyConfig {
 		return new MasterKeyConfigProperties();
 	}
 
-	private KeyPair generateMasterKey() throws IOException {
+	private KeyPair generateMasterKey(String password) throws IOException {
 		File keyFile = File.createTempFile("enkrip-" + System.currentTimeMillis(), ".pem");
 		logger.info("Generating key-pair [{}]", keyFile.getAbsolutePath());
-		KeyPair keyPair = KeyPairUtils.createKeyPair(MASTER_KEY_SIZE);
+		KeyPair keyPair = KeyUtils.generateRSAKeyPair(MASTER_KEY_SIZE);
 		try (FileWriter fileWriter = new FileWriter(keyFile)) {
-			KeyPairUtils.writeKeyPair(keyPair, fileWriter);
+			KeyUtils.writeKeyPair(fileWriter, keyPair, password.toCharArray());
 		}
 		logger.info("Key-pair generated");
 		return keyPair;
 	}
 
-	private KeyPair loadMasterKey(String stringLocation, ResourceLoader resourceLoader) throws IOException {
+	private KeyPair loadMasterKey(String stringLocation, String password, ResourceLoader resourceLoader) throws IOException, OperatorCreationException, PKCSException {
 		Resource keyResource = resourceLoader.getResource(stringLocation);
 		if (!keyResource.exists()) {
 			throw new IllegalArgumentException("Cannot find master key file in [" + keyResource.getURL() + "]");
 		}
 		logger.info("Loading key-pair [{}]", keyResource.getURL());
 		try (Reader keyReader = new InputStreamReader(keyResource.getInputStream())) {
-			return KeyPairUtils.readKeyPair(keyReader);
+			return KeyUtils.readKeyPair(keyReader, password.toCharArray());
 		} finally {
 			logger.info("Key-pair loaded");
 		}
@@ -55,19 +56,20 @@ public class MasterKeyConfig {
 
 	@Bean
 	@Primary
-	public KeyPair masterKeyPair(MasterKeyConfigProperties properties, ResourceLoader resourceLoader) throws IOException {
+	public KeyPair masterKeyPair(MasterKeyConfigProperties properties, ResourceLoader resourceLoader) throws IOException, OperatorCreationException, PKCSException {
 		if (properties.generateOnStartup) {
-			return generateMasterKey();
+			return generateMasterKey(properties.password);
 		}
 		if (StringUtils.isBlank(properties.location)) {
 			throw new IllegalArgumentException("Parameter [enkrip.master-key.location] is mandatory");
 		}
-		return loadMasterKey(properties.location, resourceLoader);
+		return loadMasterKey(properties.location, properties.password, resourceLoader);
 	}
 
 	public static class MasterKeyConfigProperties {
 		private boolean generateOnStartup = true;
-		private String location;
+		private String location = "";
+		private String password = "";
 
 		public void setGenerateOnStartup(boolean generateOnStartup) {
 			this.generateOnStartup = generateOnStartup;
@@ -75,6 +77,10 @@ public class MasterKeyConfig {
 
 		public void setLocation(String location) {
 			this.location = location;
+		}
+
+		public void setPassword(String password) {
+			this.password = password;
 		}
 	}
 }
