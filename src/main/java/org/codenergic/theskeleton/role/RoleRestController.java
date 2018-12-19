@@ -15,20 +15,25 @@
  */
 package org.codenergic.theskeleton.role;
 
-import org.codenergic.theskeleton.privilege.PrivilegeRestData;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/roles")
 public class RoleRestController {
 	private final RoleService roleService;
+	private final RoleMapper roleMapper = RoleMapper.newInstance();
 
 	public RoleRestController(RoleService roleService) {
 		this.roleService = roleService;
@@ -40,48 +45,29 @@ public class RoleRestController {
 	}
 
 	@GetMapping("/{idOrCode}")
-	public RoleRestData findRoleByIdOrCode(@PathVariable("idOrCode") final String idOrCode) {
-		RoleEntity role = roleService.findRoleByIdOrCode(idOrCode);
-		return convertEntityToRestData(role);
+	public ResponseEntity<RoleRestData> findRoleByIdOrCode(@PathVariable("idOrCode") final String idOrCode) {
+		return roleService.findRoleByIdOrCode(idOrCode)
+			.map(roleMapper::toRoleData)
+			.map(ResponseEntity::ok)
+			.orElse(ResponseEntity.notFound().build());
 	}
 
 	@GetMapping
 	public Page<RoleRestData> findRoles(@RequestParam(name = "q", defaultValue = "") final String keywords,
 			final Pageable pageable) {
 		return roleService.findRoles(keywords, pageable)
-				.map(s -> RoleRestData.builder(s).build());
+				.map(roleMapper::toRoleData);
 	}
 
 	@PostMapping
-	public RoleRestData saveRole(@RequestBody @Validated(RoleRestData.New.class) final RoleRestData role) {
-		return RoleRestData.builder(roleService.saveRole(role.toRoleEntity()))
-				.build();
+	public RoleRestData saveRole(@RequestBody @Validated(RoleRestData.New.class) final RoleRestData roleData) {
+		final RoleEntity role = roleMapper.toRole(roleData);
+		return roleMapper.toRoleData(roleService.saveRole(role));
 	}
 
 	@PutMapping("/{code}")
-	public RoleRestData updateRole(@PathVariable("code") String code, @RequestBody @Validated(RoleRestData.Existing.class) final RoleRestData role) {
-		return RoleRestData.builder(roleService.updateRole(code, role.toRoleEntity()))
-				.build();
-	}
-
-	@PutMapping("/{code}/privileges")
-	public RoleRestData addPrivilegeToRole(@PathVariable("code") String code, @RequestBody Map<String, String> body) {
-		return convertEntityToRestData(roleService.addPrivilegeToRole(code, body.get("privilege")));
-	}
-
-	@GetMapping("/{code}/privileges")
-	public Set<PrivilegeRestData> findPrivilegesByRoleCode(@PathVariable("code") String code) {
-		return roleService.findPrivilegesByRoleCode(code).stream()
-				.map(p -> PrivilegeRestData.builder(p).build())
-				.collect(Collectors.toSet());
-	}
-
-	@DeleteMapping("/{code}/privileges")
-	public RoleRestData removePrivilegeFromRole(@PathVariable("code") String code, @RequestBody Map<String, String> body) {
-		return convertEntityToRestData(roleService.removePrivilegeFromRole(code, body.get("privilege")));
-	}
-
-	private RoleRestData convertEntityToRestData(RoleEntity role) {
-		return role == null ? null : RoleRestData.builder(role).build();
+	public RoleRestData updateRole(@PathVariable("code") String code, @RequestBody @Validated(RoleRestData.Existing.class) final RoleRestData roleData) {
+		final RoleEntity role = roleMapper.toRole(roleData);
+		return roleMapper.toRoleData(roleService.updateRole(code, role));
 	}
 }

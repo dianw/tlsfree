@@ -17,27 +17,35 @@ package org.codenergic.theskeleton.privilege;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/privileges")
 public class PrivilegeRestController {
 	private final PrivilegeService privilegeService;
+	private final PrivilegeMapper privilegeMapper = PrivilegeMapper.newInstance();
 
 	public PrivilegeRestController(PrivilegeService privilegeService) {
 		this.privilegeService = privilegeService;
 	}
 
 	@GetMapping("/{idOrName}")
-	public PrivilegeRestData findPrivilegeByIdOrName(@PathVariable("idOrName") final String idOrName) {
-		PrivilegeEntity privilege = privilegeService.findPrivilegeByIdOrName(idOrName);
-		return privilege == null ? null : PrivilegeRestData.builder(privilege).build();
+	public ResponseEntity<PrivilegeRestData> findPrivilegeByIdOrName(@PathVariable("idOrName") final String idOrName) {
+		return privilegeService.findPrivilegeByIdOrName(idOrName)
+			.map(privilegeMapper::toPrivilegeData)
+			.map(ResponseEntity::ok)
+			.orElse(ResponseEntity.notFound().build());
 	}
 
 	@GetMapping
 	public Page<PrivilegeRestData> findPrivileges(@RequestParam(name = "q", defaultValue = "") final String keywords,
 			final Pageable pageable) {
 		return privilegeService.findPrivileges(keywords, pageable)
-				.map(s -> PrivilegeRestData.builder(s).build());
+				.map(privilegeMapper::toPrivilegeData);
 	}
 }

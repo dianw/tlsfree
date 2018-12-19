@@ -16,7 +16,8 @@
 
 package org.codenergic.theskeleton.follower;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Collections;
+
 import org.codenergic.theskeleton.core.test.EnableRestDocs;
 import org.codenergic.theskeleton.core.web.UserArgumentResolver;
 import org.codenergic.theskeleton.user.UserEntity;
@@ -42,7 +43,7 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.util.Collections;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -50,7 +51,9 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @RunWith(SpringRunner.class)
@@ -71,7 +74,7 @@ public class UserFollowerRestControllerTest {
 	private MockMvc mockMvc;
 
 	@Before
-	public void init() throws Exception {
+	public void init() {
 		when(userDetailsService.loadUserByUsername(USERNAME)).thenReturn(new UserEntity().setId(USER_ID).setUsername(USERNAME));
 		mockMvc = MockMvcBuilders
 			.standaloneSetup(new UserFollowerRestController(userFollowerService))
@@ -97,7 +100,7 @@ public class UserFollowerRestControllerTest {
 		assertThat(response.getStatus()).isEqualTo(200);
 		Page<UserFollowerRestData> result = new PageImpl<>(Collections
 			.singletonList(UserFollowerRestData.builder()
-				.setFollowerUsername(USER_ID).setFollowerPictureUrl(USERNAME).build()));
+				.followerUsername(USER_ID).followerPictureUrl(USERNAME).build()));
 		assertThat(response.getContentAsString()).isEqualTo(objectMapper.writeValueAsString(result));
 		verify(userFollowerService).findUserFollowers(eq(USER_ID), any());
 	}
@@ -115,7 +118,7 @@ public class UserFollowerRestControllerTest {
 		assertThat(response.getStatus()).isEqualTo(200);
 		Page<UserFollowerRestData> result = new PageImpl<>(Collections
 			.singletonList(UserFollowerRestData.builder()
-				.setFollowingUsername(USER_ID).setFollowingPictureUrl(USERNAME).build()));
+				.followingUsername(USER_ID).followingPictureUrl(USERNAME).build()));
 		assertThat(response.getContentAsString()).isEqualTo(objectMapper.writeValueAsString(result));
 		verify(userFollowerService).findUserFollowings(eq(USER_ID), any());
 	}
@@ -133,8 +136,8 @@ public class UserFollowerRestControllerTest {
 			.getResponse();
 		assertThat(response.getStatus()).isEqualTo(200);
 		UserFollowerRestData result = UserFollowerRestData.builder()
-			.setFollowingUsername(USER_ID).setFollowingPictureUrl(USERNAME)
-			.setFollowerUsername(USERNAME).setFollowerPictureUrl(USER_ID).build();
+			.followingUsername(USER_ID).followingPictureUrl(USERNAME)
+			.followerUsername(USERNAME).followerPictureUrl(USER_ID).build();
 		assertThat(response.getContentAsString()).isEqualTo(objectMapper.writeValueAsString(result));
 		verify(userFollowerService).followUser(USER_ID, USER_ID);
 	}
@@ -151,6 +154,20 @@ public class UserFollowerRestControllerTest {
 		assertThat(response.getStatus()).isEqualTo(200);
 		assertThat(response.getContentAsString()).isEqualTo("10");
 		verify(userFollowerService).getNumberOfFollowers(USER_ID);
+	}
+
+	@Test
+	public void testGetNumberOfFollowings() throws Exception {
+		when(userFollowerService.getNumberOfFollowings(USER_ID)).thenReturn(10L);
+		MockHttpServletResponse response = mockMvc.perform(get("/api/users/" + USERNAME + "/followings")
+			.param("totals", "true")
+			.contentType(MediaType.APPLICATION_JSON))
+			.andExpect(status().isOk())
+			.andReturn()
+			.getResponse();
+		assertThat(response.getStatus()).isEqualTo(200);
+		assertThat(response.getContentAsString()).isEqualTo("10");
+		verify(userFollowerService).getNumberOfFollowings(USER_ID);
 	}
 
 	@Test

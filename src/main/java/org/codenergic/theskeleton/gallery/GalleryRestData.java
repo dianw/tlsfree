@@ -15,34 +15,15 @@
  */
 package org.codenergic.theskeleton.gallery;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
-import com.google.auto.value.AutoValue;
 import org.codenergic.theskeleton.core.data.RestData;
+import org.immutables.value.Value;
 
-@AutoValue
-@JsonDeserialize(builder = AutoValue_GalleryRestData.Builder.class)
-abstract class GalleryRestData implements RestData {
-	static Builder builder() {
-		return new AutoValue_GalleryRestData.Builder();
-	}
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
-	static Builder builder(GalleryEntity gallery) {
-		return builder()
-			.imageUrl(gallery.getImageUrl())
-			.userId(gallery.getCreatedBy().getUserId());
-	}
+@Value.Immutable
+@JsonDeserialize(builder = ImmutableGalleryRestData.Builder.class)
+interface GalleryRestData extends RestData {
+	String getImageUrl();
 
-	abstract String getImageUrl();
-
-	abstract String getUserId();
-
-	@AutoValue.Builder
-	interface Builder extends RestData.Builder {
-		GalleryRestData build();
-
-		Builder imageUrl(String imageUrl);
-
-		Builder userId(String userId);
-	}
+	String getUserId();
 }

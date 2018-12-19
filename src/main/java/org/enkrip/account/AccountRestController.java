@@ -10,9 +10,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/acme-accounts")
 public class AccountRestController {
+	private final UserAccountMapper userAccountMapper;
 	private final UserAccountService userAccountService;
 
 	public AccountRestController(UserAccountService userAccountService) {
+		this.userAccountMapper = UserAccountMapper.MAPPER;
 		this.userAccountService = userAccountService;
 	}
 
@@ -20,6 +22,6 @@ public class AccountRestController {
 	public UserAccountRestData findUserAccountById(@PathVariable("id") String accountId) throws AcmeException {
 		UserAccountEntity account = userAccountService.findUserAccountById(accountId);
 		Page<UserAccountContactEntity> contacts = userAccountService.findAccountContactsByAccount(accountId, null);
-		return UserAccountRestData.builder(account, contacts.getContent()).build();
+		return userAccountMapper.toUserAccountData(account, contacts.getContent());
 	}
 }

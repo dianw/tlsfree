@@ -15,17 +15,9 @@
  */
 package org.codenergic.theskeleton.privilege;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.Collections;
+import java.util.Optional;
 
 import org.codenergic.theskeleton.core.test.EnableRestDocs;
 import org.codenergic.theskeleton.core.test.InjectUserDetailsService;
@@ -45,6 +37,15 @@ import org.springframework.test.web.servlet.ResultActions;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 @RunWith(SpringRunner.class)
 @EnableSpringDataWebSupport
 @WebMvcTest(controllers = { PrivilegeRestController.class }, secure = false)
@@ -57,18 +58,7 @@ public class PrivilegeRestControllerTest {
 	private ObjectMapper objectMapper;
 	@MockBean
 	private PrivilegeService privilegeService;
-
-	@Test
-	public void testSerializeDeserializePrivilege() throws IOException {
-		PrivilegeRestData privilege = PrivilegeRestData.builder()
-				.id("123")
-				.name("12345")
-				.description("Description 12345")
-				.build();
-		String json = objectMapper.writeValueAsString(privilege);
-		PrivilegeRestData privilege2 = objectMapper.readValue(json, PrivilegeRestData.class);
-		assertThat(privilege).isEqualTo(privilege2);
-	}
+	private final PrivilegeMapper privilegeMapper = PrivilegeMapper.newInstance();
 
 	@Test
 	public void testFindPrivilegeByName() throws Exception {
@@ -76,7 +66,7 @@ public class PrivilegeRestControllerTest {
 				.setId("123")
 				.setName("12345")
 				.setDescription("Description 12345");
-		when(privilegeService.findPrivilegeByIdOrName("123")).thenReturn(dbResult);
+		when(privilegeService.findPrivilegeByIdOrName("123")).thenReturn(Optional.of(dbResult));
 		ResultActions resultActions = mockMvc.perform(get("/api/privileges/123").contentType(MediaType.APPLICATION_JSON))
 				.andExpect(status().isOk())
 				.andDo(document("privilege-read"));
@@ -85,17 +75,17 @@ public class PrivilegeRestControllerTest {
 				.getResponse();
 		verify(privilegeService).findPrivilegeByIdOrName("123");
 		assertThat(response.getContentAsByteArray())
-				.isEqualTo(objectMapper.writeValueAsBytes(PrivilegeRestData.builder(dbResult).build()));
+				.isEqualTo(objectMapper.writeValueAsBytes(privilegeMapper.toPrivilegeData(dbResult)));
 	}
 
 	@Test
 	public void testFindPrivilegeByNameNotFound() throws Exception {
-		when(privilegeService.findPrivilegeByIdOrName("123")).thenReturn(null);
+		when(privilegeService.findPrivilegeByIdOrName("123")).thenReturn(Optional.empty());
 		MockHttpServletResponse response = mockMvc.perform(get("/api/privileges/123"))
 				.andReturn()
 				.getResponse();
 		verify(privilegeService).findPrivilegeByIdOrName("123");
-		assertThat(response.getStatus()).isEqualTo(200);
+		assertThat(response.getStatus()).isEqualTo(404);
 		assertThat(response.getContentAsByteArray()).isEqualTo(new byte[0]);
 	}
 
@@ -105,8 +95,8 @@ public class PrivilegeRestControllerTest {
 				.setId("123")
 				.setName("12345")
 				.setDescription("Description 12345");
-		Page<PrivilegeEntity> pageResponseBody = new PageImpl<>(Arrays.asList(dbResult));
-		Page<PrivilegeRestData> expectedResponseBody = new PageImpl<>(Arrays.asList(PrivilegeRestData.builder(dbResult).build()));
+		Page<PrivilegeEntity> pageResponseBody = new PageImpl<>(Collections.singletonList(dbResult));
+		Page<PrivilegeRestData> expectedResponseBody = new PageImpl<>(Collections.singletonList(privilegeMapper.toPrivilegeData(dbResult)));
 		when(privilegeService.findPrivileges(anyString(), any())).thenReturn(pageResponseBody);
 		ResultActions resultActions = mockMvc.perform(get("/api/privileges").contentType(MediaType.APPLICATION_JSON))
 				.andExpect(status().isOk())
@@ -116,5 +106,17 @@ public class PrivilegeRestControllerTest {
 				.getResponse();
 		verify(privilegeService).findPrivileges(anyString(), any());
 		assertThat(response.getContentAsByteArray()).isEqualTo(objectMapper.writeValueAsBytes(expectedResponseBody));
+	}
+
+	@Test
+	public void testSerializeDeserializePrivilege() throws IOException {
+		PrivilegeRestData privilege = ImmutablePrivilegeRestData.builder()
+				.id("123")
+				.name("12345")
+				.description("Description 12345")
+				.build();
+		String json = objectMapper.writeValueAsString(privilege);
+		PrivilegeRestData privilege2 = objectMapper.readValue(json, PrivilegeRestData.class);
+		assertThat(privilege).isEqualTo(privilege2);
 	}
 }

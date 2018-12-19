@@ -15,7 +15,10 @@
  */
 package org.codenergic.theskeleton.core.web;
 
-import org.codenergic.theskeleton.user.UserEntity;
+import java.util.Map;
+
+import org.codenergic.theskeleton.core.security.ImmutableUser;
+import org.codenergic.theskeleton.core.security.User;
 import org.springframework.core.MethodParameter;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -27,9 +30,6 @@ import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 import org.springframework.web.servlet.HandlerMapping;
-import org.springframework.web.servlet.mvc.method.annotation.PathVariableMapMethodArgumentResolver;
-
-import java.util.Map;
 
 public class UserArgumentResolver implements HandlerMethodArgumentResolver {
 	private static final String CURRENT_USER_USERNAME = "me";
@@ -41,27 +41,27 @@ public class UserArgumentResolver implements HandlerMethodArgumentResolver {
 
 	@Override
 	public boolean supportsParameter(MethodParameter parameter) {
-		return UserDetails.class.isAssignableFrom(parameter.getNestedParameterType()) && parameter.hasParameterAnnotation(User.class);
+		return User.class.isAssignableFrom(parameter.getNestedParameterType()) && parameter.hasParameterAnnotation(User.Inject.class);
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
 	public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer, NativeWebRequest webRequest,
 								  WebDataBinderFactory binderFactory) {
-		User user = parameter.getParameterAnnotation(User.class);
+		User.Inject injectUser = parameter.getParameterAnnotation(User.Inject.class);
 		Map<String, String> uriTemplateVars =
 			(Map<String, String>) webRequest.getAttribute(
 				HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE, RequestAttributes.SCOPE_REQUEST);
-		String username = uriTemplateVars.get(user.parameterName());
+		String username = uriTemplateVars.get(injectUser.parameterName());
+		if (username == null) return null;
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		if (CURRENT_USER_USERNAME.equals(username)) {
-			if (authentication == null) return null;
-			if (authentication.getPrincipal() instanceof UserEntity){
-				return authentication.getPrincipal();
-			} else {
-				username = authentication.getName();
-			}
+		if (username.equals(CURRENT_USER_USERNAME) && authentication != null && authentication.getPrincipal() instanceof User) {
+			return authentication.getPrincipal();
 		}
-		return username == null ? null : userDetailsService.loadUserByUsername(username);
+		if (!username.equals(CURRENT_USER_USERNAME)) {
+			UserDetails user = userDetailsService.loadUserByUsername(username);
+			if (user instanceof User) return user;
+		}
+		return ImmutableUser.builder().username(username).build();
 	}
 }

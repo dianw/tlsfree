@@ -15,14 +15,20 @@
  */
 package org.codenergic.theskeleton.user;
 
+import java.io.InputStream;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.codenergic.theskeleton.role.RoleRestData;
+import javax.servlet.http.HttpServletRequest;
+
+import org.codenergic.theskeleton.core.security.User;
 import org.codenergic.theskeleton.tokenstore.TokenStoreService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.session.SessionInformation;
+import org.springframework.security.oauth2.provider.approval.Approval;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -37,87 +43,110 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/users")
 public class UserRestController {
-	private UserService userService;
-	private UserAdminService userAdminService;
-	private TokenStoreService tokenStoreService;
+	private final UserService userService;
+	private final TokenStoreService tokenStoreService;
+	private final UserMapper userMapper = UserMapper.newInstance();
+	private final UserOAuth2ClientApprovalMapper clientApprovalMapper = UserOAuth2ClientApprovalMapper.newInstance();
 
-	public UserRestController(UserService userService, UserAdminService userAdminService, TokenStoreService tokenStoreService) {
+	public UserRestController(UserService userService, TokenStoreService tokenStoreService) {
 		this.userService = userService;
-		this.userAdminService = userAdminService;
 		this.tokenStoreService = tokenStoreService;
 	}
 
-	@PutMapping("/{username}/roles")
-	public UserRestData addRoleToUser(@PathVariable("username") String username, @RequestBody Map<String, String> body) {
-		return convertEntityToRestData(userAdminService.addRoleToUser(username, body.get("role")));
-	}
-
 	@DeleteMapping("/{username}")
-	public void deleteUser(@PathVariable("username") String username) {
-		tokenStoreService.deleteTokenByUser(userService.findUserByUsername(username));
-		userAdminService.deleteUser(username);
+	public void deleteUser(@User.Inject User user) {
+		userService.findUserByUsername(user.getUsername()).ifPresent(tokenStoreService::deleteTokenByUser);
+		userService.deleteUser(user.getUsername());
 	}
 
 	@PutMapping("/{username}/enable")
 	public UserRestData enableOrDisableUser(@PathVariable("username") String username, @RequestBody Map<String, Boolean> body) {
-		return convertEntityToRestData(userAdminService.enableOrDisableUser(username, body.getOrDefault("enabled", true)));
+		return userMapper.toUserData(userService.enableOrDisableUser(username, body.getOrDefault("enabled", true)));
 	}
 
 	@PutMapping("/{username}/exp")
 	public UserRestData extendsUserExpiration(@PathVariable("username") String username, @RequestBody Map<String, Integer> body) {
-		return convertEntityToRestData(userAdminService.extendsUserExpiration(username, body.getOrDefault("amount", 180)));
+		return userMapper.toUserData(userService.extendsUserExpiration(username, body.getOrDefault("amount", 180)));
 	}
 
-	@GetMapping("/{username}/roles")
-	public Set<RoleRestData> findRolesByUserUsername(@PathVariable("username") String username) {
-		return userAdminService.findRolesByUserUsername(username).stream()
-				.map(r -> RoleRestData.builder(r).build())
-				.collect(Collectors.toSet());
+	@GetMapping("/{username}/sessions")
+	public List<SessionInformation> findUserActiveSessions(@User.Inject User user) {
+		return userService.findUserActiveSessions(user.getUsername());
+	}
+
+	@GetMapping("/{username}/connected-apps")
+	public List<UserOAuth2ClientApprovalRestData> findUserConnectedApps(@User.Inject User user) {
+		return userService.findUserOAuth2ClientApprovalByUsername(user.getUsername())
+			.stream()
+			.collect(Collectors.groupingBy(e -> e.getClient().getId()))
+			.values().stream()
+			.filter(clients -> !clients.isEmpty())
+			.map(clients -> {
+				Map<String, Approval.ApprovalStatus> scopeAndStatus = clients.stream()
+					.collect(Collectors.toMap(UserOAuth2ClientApprovalEntity::getScope, UserOAuth2ClientApprovalEntity::getApprovalStatus));
+				return clientApprovalMapper.toUserOAuth2ClientApprovalData(clients.get(0), scopeAndStatus);
+			})
+			.collect(Collectors.toList());
 	}
 
 	@GetMapping(path = "/{email}", params = { "email" })
-	public UserRestData findUserByEmail(@PathVariable("email") String email) {
-		return convertEntityToRestData(userService.findUserByEmail(email));
+	public ResponseEntity<UserRestData> findUserByEmail(@PathVariable("email") String email) {
+		return userService.findUserByEmail(email)
+			.map(userMapper::toUserData)
+			.map(ResponseEntity::ok)
+			.orElse(ResponseEntity.notFound().build());
 	}
 
 	@GetMapping(path = "/{username}")
-	public UserRestData findUserByUsername(@PathVariable("username") String username) {
-		return convertEntityToRestData(userService.findUserByUsername(username));
+	public ResponseEntity<UserRestData> findUserByUsername(@User.Inject User user) {
+		return userService.findUserByUsername(user.getUsername())
+			.map(userMapper::toUserData)
+			.map(ResponseEntity::ok)
+			.orElse(ResponseEntity.notFound().build());
 	}
 
 	@GetMapping
 	public Page<UserRestData> findUsersByUsernameStartingWith(
 			@RequestParam(name = "username", defaultValue = "") String username, Pageable pageable) {
-		return userAdminService.findUsersByUsernameStartingWith(username, pageable)
-				.map(this::convertEntityToRestData);
+		return userService.findUsersByUsernameStartingWith(username, pageable)
+				.map(userMapper::toUserData);
 	}
 
 	@PutMapping("/{username}/lock")
 	public UserRestData lockOrUnlockUser(@PathVariable("username") String username, @RequestBody Map<String, Boolean> body) {
-		return convertEntityToRestData(userAdminService.lockOrUnlockUser(username, body.getOrDefault("unlocked", true)));
+		return userMapper.toUserData(userService.lockOrUnlockUser(username, body.getOrDefault("unlocked", true)));
 	}
 
-	@DeleteMapping("/{username}/roles")
-	public UserRestData removeRoleFromUser(@PathVariable("username") String username, @RequestBody Map<String, String> body) {
-		return convertEntityToRestData(userAdminService.removeRoleFromUser(username, body.get("role")));
+	@DeleteMapping("/{username}/connected-apps")
+	public void removeUserConnectedApps(@User.Inject User user, @RequestBody String clientId) {
+		userService.removeUserOAuth2ClientApprovalByUsername(user.getUsername(), clientId);
+	}
+
+	@DeleteMapping("/{username}/sessions")
+	public void revokeUserSession(@User.Inject User user, @RequestBody String sessionId) {
+		userService.revokeUserSession(user.getUsername(), sessionId);
 	}
 
 	@PostMapping
 	public UserRestData saveUser(@RequestBody @Validated(UserRestData.New.class) UserRestData userData) {
-		return convertEntityToRestData(userAdminService.saveUser(userData.toUserEntity()));
+		return userMapper.toUserData(userService.saveUser(userMapper.toUser(userData)));
 	}
 
 	@PutMapping("/{username}")
-	public UserRestData updateUser(@PathVariable("username") String username, @RequestBody @Validated(UserRestData.Existing.class) UserRestData userData) {
-		return convertEntityToRestData(userAdminService.updateUser(username, userData.toUserEntity()));
+	public UserRestData updateUser(@User.Inject User user, @RequestBody @Validated(UserRestData.Existing.class) UserRestData userData) {
+		return userMapper.toUserData(userService.updateUser(user.getUsername(), userMapper.toUser(userData)));
 	}
 
 	@PutMapping("/{username}/password")
-	public UserRestData updateUserPassword(@PathVariable("username") String username, @RequestBody Map<String, String> body) {
-		return convertEntityToRestData(userAdminService.updateUserPassword(username, body.get("password")));
+	public UserRestData updateUserPassword(@User.Inject User user, @RequestBody Map<String, String> body) {
+		return userMapper.toUserData(userService.updateUserPassword(user.getUsername(), body.get("password")));
 	}
 
-	private UserRestData convertEntityToRestData(UserEntity user) {
-		return UserRestData.builder(user).build();
+	@PutMapping(path = "/{username}/picture", consumes = "image/*")
+	public UserRestData updateUserPicture(@User.Inject User user, HttpServletRequest request) throws Exception {
+		try (InputStream image = request.getInputStream()) {
+			UserEntity u = userService.updateUserPicture(user.getUsername(), image, request.getContentType());
+			return userMapper.toUserData(u);
+		}
 	}
 }

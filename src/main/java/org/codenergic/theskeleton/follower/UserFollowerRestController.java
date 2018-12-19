@@ -16,12 +16,15 @@
 
 package org.codenergic.theskeleton.follower;
 
-import org.codenergic.theskeleton.core.web.User;
-import org.codenergic.theskeleton.user.UserEntity;
+import org.codenergic.theskeleton.core.security.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/users/{username}")
@@ -33,41 +36,46 @@ public class UserFollowerRestController {
 	}
 
 	@GetMapping("/followers")
-	public Page<UserFollowerRestData> findUserFollowers(@User UserEntity user, Pageable pageable) {
+	public Page<UserFollowerRestData> findUserFollowers(@User.Inject User user, Pageable pageable) {
 		return userFollowerService.findUserFollowers(user.getId(), pageable)
 			.map(u -> UserFollowerRestData.builder()
-				.setFollowerUsername(u.getUsername())
-				.setFollowerPictureUrl(u.getPictureUrl())
+				.followerUsername(u.getUsername())
+				.followerPictureUrl(u.getPictureUrl())
 				.build());
 	}
 
 	@GetMapping("/followings")
-	public Page<UserFollowerRestData> findUserFollowings(@User UserEntity user, Pageable pageable) {
+	public Page<UserFollowerRestData> findUserFollowings(@User.Inject User user, Pageable pageable) {
 		return userFollowerService.findUserFollowings(user.getId(), pageable)
 			.map(u -> UserFollowerRestData.builder()
-				.setFollowingUsername(u.getUsername())
-				.setFollowingPictureUrl(u.getPictureUrl())
+				.followingUsername(u.getUsername())
+				.followingPictureUrl(u.getPictureUrl())
 				.build());
 	}
 
 	@PutMapping("/followers")
-	public UserFollowerRestData followUser(@User UserEntity user, @AuthenticationPrincipal UserEntity currentUser) {
+	public UserFollowerRestData followUser(@User.Inject User user, @AuthenticationPrincipal User currentUser) {
 		UserFollowerEntity userFollower = userFollowerService.followUser(currentUser.getId(), user.getId());
 		return UserFollowerRestData.builder()
-			.setFollowerUsername(userFollower.getFollower().getUsername())
-			.setFollowerPictureUrl(userFollower.getFollower().getPictureUrl())
-			.setFollowingUsername(userFollower.getUser().getUsername())
-			.setFollowingPictureUrl(userFollower.getUser().getPictureUrl())
+			.followerUsername(userFollower.getFollower().getUsername())
+			.followerPictureUrl(userFollower.getFollower().getPictureUrl())
+			.followingUsername(userFollower.getUser().getUsername())
+			.followingPictureUrl(userFollower.getUser().getPictureUrl())
 			.build();
 	}
 
 	@GetMapping(path = "/followers", params = {"totals"})
-	public long getNumberOfFollowers(@User UserEntity user) {
+	public long getNumberOfFollowers(@User.Inject User user) {
 		return userFollowerService.getNumberOfFollowers(user.getId());
 	}
 
+	@GetMapping(path = "/followings", params = {"totals"})
+	public long getNumberOfFollowings(@User.Inject User user) {
+		return userFollowerService.getNumberOfFollowings(user.getId());
+	}
+
 	@DeleteMapping("/followers")
-	public void unfollowUser(@User UserEntity user, @AuthenticationPrincipal UserEntity currentUser) {
+	public void unfollowUser(@User.Inject User user, @AuthenticationPrincipal User currentUser) {
 		userFollowerService.unfollowUser(currentUser.getId(), user.getId());
 	}
 }

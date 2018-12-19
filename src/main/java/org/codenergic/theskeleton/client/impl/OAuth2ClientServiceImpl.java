@@ -15,9 +15,10 @@
  */
 package org.codenergic.theskeleton.client.impl;
 
-import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.Validate;
 import org.codenergic.theskeleton.client.OAuth2ClientEntity;
 import org.codenergic.theskeleton.client.OAuth2ClientRepository;
 import org.codenergic.theskeleton.client.OAuth2ClientService;
@@ -26,6 +27,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.provider.ClientDetails;
+import org.springframework.security.oauth2.provider.ClientRegistrationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,26 +42,17 @@ public class OAuth2ClientServiceImpl implements OAuth2ClientService {
 		this.passwordEncoder = passwordEncoder;
 	}
 
-	private void assertClientNotNull(OAuth2ClientEntity client) {
-		Objects.requireNonNull(client, "Client not found");
-	}
-
 	@Override
 	@Transactional
 	public void deleteClient(String id) {
-		OAuth2ClientEntity o = findClientById(id);
-		assertClientNotNull(o);
+		OAuth2ClientEntity o = findClientById(id)
+			.orElseThrow(() -> new ClientRegistrationException(id));
 		clientRepository.delete(o);
 	}
 
 	@Override
-	public ClientDetails loadClientByClientId(String clientId) {
-		return findClientById(clientId);
-	}
-
-	@Override
-	public OAuth2ClientEntity findClientById(String id) {
-		return clientRepository.findOne(id);
+	public Optional<OAuth2ClientEntity> findClientById(String id) {
+		return clientRepository.findById(id);
 	}
 
 	@Override
@@ -75,28 +68,42 @@ public class OAuth2ClientServiceImpl implements OAuth2ClientService {
 	@Override
 	@Transactional
 	public OAuth2ClientEntity generateSecret(String clientId) {
-		OAuth2ClientEntity client = findClientById(clientId);
-		client.setClientSecret(passwordEncoder.encode(clientId));
-		return client;
+		OAuth2ClientEntity client = findClientById(clientId)
+			.orElseThrow(() -> new ClientRegistrationException(clientId));
+		return generateSecret(client);
+	}
+
+	private OAuth2ClientEntity generateSecret(OAuth2ClientEntity client) {
+		Validate.notNull(client);
+		Validate.notBlank(client.getId());
+		return client.setClientSecret(passwordEncoder.encode(client.getClientId()));
+	}
+
+	@Override
+	public ClientDetails loadClientByClientId(String clientId) {
+		return findClientById(clientId)
+			.orElseThrow(() -> new ClientRegistrationException(clientId));
 	}
 
 	@Override
 	@Transactional
 	public OAuth2ClientEntity saveClient(OAuth2ClientEntity client) {
-		return clientRepository.save(client.setId(null));
+		OAuth2ClientEntity savedClient = clientRepository.save(client.setId(null));
+		return generateSecret(savedClient);
 	}
 
 	@Override
 	@Transactional
 	public OAuth2ClientEntity updateClient(String clientId, OAuth2ClientEntity newClient) {
 		return findClientById(clientId)
-				.setName(newClient.getName())
-				.setDescription(newClient.getDescription())
-				.setAuthorizedGrantTypes(newClient.getAuthorizedGrantTypes()
-						.stream()
-						.map(OAuth2GrantType::valueOf)
-						.collect(Collectors.toSet()))
-				.setAutoApprove(newClient.isAutoApprove())
-				.setRegisteredRedirectUris(newClient.getRegisteredRedirectUri());
+			.orElseThrow(() -> new ClientRegistrationException(clientId))
+			.setName(newClient.getName())
+			.setDescription(newClient.getDescription())
+			.setAuthorizedGrantTypes(newClient.getAuthorizedGrantTypes()
+				.stream()
+				.map(OAuth2GrantType::valueOf)
+				.collect(Collectors.toSet()))
+			.setAutoApprove(newClient.isAutoApprove())
+			.setRegisteredRedirectUris(newClient.getRegisteredRedirectUri());
 	}
 }

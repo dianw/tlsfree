@@ -15,24 +15,11 @@
  */
 package org.codenergic.theskeleton.client;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.codenergic.theskeleton.client.OAuth2GrantType.AUTHORIZATION_CODE;
-import static org.codenergic.theskeleton.client.OAuth2GrantType.IMPLICIT;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Optional;
 
 import org.codenergic.theskeleton.core.test.EnableRestDocs;
 import org.codenergic.theskeleton.core.test.InjectUserDetailsService;
@@ -53,6 +40,21 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.codenergic.theskeleton.client.OAuth2GrantType.AUTHORIZATION_CODE;
+import static org.codenergic.theskeleton.client.OAuth2GrantType.IMPLICIT;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 @RunWith(SpringRunner.class)
 @EnableSpringDataWebSupport
 @WebMvcTest(controllers = {OAuth2ClientRestController.class})
@@ -65,6 +67,7 @@ public class OAuth2ClientRestControllerTest {
 	private ObjectMapper objectMapper;
 	@MockBean
 	private OAuth2ClientService oAuth2ClientService;
+	private final OAuth2ClientMapper oAuth2ClientMapper = OAuth2ClientMapper.newInstance();
 
 	@Test
 	@WithMockUser("user123")
@@ -86,7 +89,7 @@ public class OAuth2ClientRestControllerTest {
 			.setSecretRequired(true)
 			.setAutoApprove(false)
 			.setAuthorizedGrantTypes(new HashSet<>(Arrays.asList(AUTHORIZATION_CODE, IMPLICIT)));
-		when(oAuth2ClientService.findClientById("client123")).thenReturn(client);
+		when(oAuth2ClientService.findClientById("client123")).thenReturn(Optional.of(client));
 		MockHttpServletRequestBuilder request = get("/api/clients/client123")
 			.contentType(MediaType.APPLICATION_JSON);
 		MockHttpServletResponse response = mockMvc.perform(request)
@@ -95,7 +98,7 @@ public class OAuth2ClientRestControllerTest {
 			.andReturn()
 			.getResponse();
 		assertThat(response.getContentAsByteArray())
-			.isEqualTo(objectMapper.writeValueAsBytes(OAuth2ClientRestData.builder(client).build()));
+			.isEqualTo(objectMapper.writeValueAsBytes(oAuth2ClientMapper.toOAuth2ClientData(client)));
 		verify(oAuth2ClientService).findClientById("client123");
 	}
 
@@ -110,7 +113,7 @@ public class OAuth2ClientRestControllerTest {
 			.setSecretRequired(true)
 			.setAutoApprove(false)
 			.setAuthorizedGrantTypes(new HashSet<>(Arrays.asList(AUTHORIZATION_CODE, IMPLICIT)));
-		Page<OAuth2ClientEntity> clients = new PageImpl<>(Arrays.asList(client));
+		Page<OAuth2ClientEntity> clients = new PageImpl<>(Collections.singletonList(client));
 		when(oAuth2ClientService.findClients(anyString(), any())).thenReturn(clients);
 		MockHttpServletRequestBuilder request = get("/api/clients")
 			.contentType(MediaType.APPLICATION_JSON);
@@ -121,7 +124,7 @@ public class OAuth2ClientRestControllerTest {
 			.getResponse();
 		assertThat(response.getContentAsByteArray())
 			.isEqualTo(objectMapper.writeValueAsBytes(
-				clients.map(c -> OAuth2ClientRestData.builder(c).build())));
+				clients.map(oAuth2ClientMapper::toOAuth2ClientData)));
 		verify(oAuth2ClientService).findClients(anyString(), any());
 	}
 
@@ -139,7 +142,7 @@ public class OAuth2ClientRestControllerTest {
 			.andReturn()
 			.getResponse();
 		assertThat(response.getContentAsByteArray())
-			.isEqualTo(objectMapper.writeValueAsBytes(OAuth2ClientRestData.builder(client).build()));
+			.isEqualTo(objectMapper.writeValueAsBytes(oAuth2ClientMapper.toOAuth2ClientData(client)));
 		verify(oAuth2ClientService).generateSecret(eq("client123"));
 	}
 
@@ -165,13 +168,13 @@ public class OAuth2ClientRestControllerTest {
 			.andReturn()
 			.getResponse();
 		assertThat(response.getContentAsByteArray())
-			.isEqualTo(objectMapper.writeValueAsBytes(OAuth2ClientRestData.builder(client).build()));
+			.isEqualTo(objectMapper.writeValueAsBytes(oAuth2ClientMapper.toOAuth2ClientData(client)));
 		verify(oAuth2ClientService).saveClient(any());
 	}
 
 	@Test
 	public void testSerializeDeserializeClient() throws IOException {
-		OAuth2ClientRestData client = OAuth2ClientRestData.builder()
+		OAuth2ClientRestData client = ImmutableOAuth2ClientRestData.builder()
 			.id("client123")
 			.name("client")
 			.description("description")
@@ -202,7 +205,7 @@ public class OAuth2ClientRestControllerTest {
 			.andReturn()
 			.getResponse();
 		assertThat(response.getContentAsByteArray())
-			.isEqualTo(objectMapper.writeValueAsBytes(OAuth2ClientRestData.builder(client).build()));
+			.isEqualTo(objectMapper.writeValueAsBytes(oAuth2ClientMapper.toOAuth2ClientData(client)));
 		verify(oAuth2ClientService).updateClient(eq("client123"), any());
 	}
 }

@@ -43,10 +43,14 @@ public class UserFollowerServiceImpl implements UserFollowerService {
 	}
 
 	@Override
+	public long getNumberOfFollowings(String userId) {
+		return userFollowerRepository.countByFollowerId(userId);
+	}
+
+	@Override
 	public void unfollowUser(String currentUserId, String followedUserId) {
-		UserFollowerEntity userFollower = userFollowerRepository.findByUserIdAndFollowerId(currentUserId, followedUserId);
-		if (userFollower == null)
-			throw new IllegalArgumentException("User follower cannot be found");
+		UserFollowerEntity userFollower = userFollowerRepository.findByUserIdAndFollowerId(currentUserId, followedUserId)
+			.orElseThrow(() -> new IllegalArgumentException("User follower cannot be found"));
 		userFollowerRepository.delete(userFollower);
 	}
 }

@@ -1,18 +1,18 @@
 package org.codenergic.theskeleton.tokenstore;
 
-import com.icegreen.greenmail.util.GreenMail;
-import com.icegreen.greenmail.util.GreenMailUtil;
-import com.icegreen.greenmail.util.ServerSetupTest;
-import it.ozimov.springboot.mail.configuration.EnableEmailTools;
+import java.util.Date;
+import java.util.Optional;
+import java.util.UUID;
+
+import javax.mail.internet.MimeMessage;
+
 import org.codenergic.theskeleton.core.mail.EmailConfig;
 import org.codenergic.theskeleton.core.mail.EmailService;
 import org.codenergic.theskeleton.core.mail.EmailServiceTest;
 import org.codenergic.theskeleton.core.mail.impl.EmailServiceImpl;
+import org.codenergic.theskeleton.core.test.NoOpPasswordEncoder;
 import org.codenergic.theskeleton.registration.RegistrationException;
 import org.codenergic.theskeleton.tokenstore.impl.TokenStoreServiceImpl;
-import org.codenergic.theskeleton.tokenstore.TokenStoreRepository;
-import org.codenergic.theskeleton.tokenstore.TokenStoreService;
-import org.codenergic.theskeleton.tokenstore.TokenStoreType;
 import org.codenergic.theskeleton.user.UserEntity;
 import org.junit.After;
 import org.junit.Before;
@@ -24,13 +24,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import javax.mail.internet.MimeMessage;
-import java.util.Date;
-import java.util.UUID;
+import com.icegreen.greenmail.util.GreenMail;
+import com.icegreen.greenmail.util.GreenMailUtil;
+import com.icegreen.greenmail.util.ServerSetupTest;
+import it.ozimov.springboot.mail.configuration.EnableEmailTools;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -49,7 +49,7 @@ public class TokenStoreServiceTest {
 	private EmailService emailService;
 
 	private TokenStoreService tokenStoreService;
-	private PasswordEncoder passwordEncoder = NoOpPasswordEncoder.getInstance();
+	private PasswordEncoder passwordEncoder = new NoOpPasswordEncoder();
 	private GreenMail greenMail;
 
 	@Before
@@ -76,8 +76,9 @@ public class TokenStoreServiceTest {
 	@Test
 	public void testFindTokenAndType() {
 		when(tokenStoreRepository.findByTokenAndType("token", TokenStoreType.USER_ACTIVATION))
-			.thenReturn(new TokenStoreEntity().setToken("123").setExpiryDate(new Date()));
-		TokenStoreEntity token = tokenStoreService.findByTokenAndType("token", TokenStoreType.USER_ACTIVATION);
+			.thenReturn(Optional.of(new TokenStoreEntity().setToken("123").setExpiryDate(new Date())));
+		TokenStoreEntity token = tokenStoreService.findByTokenAndType("token", TokenStoreType.USER_ACTIVATION)
+			.orElse(new TokenStoreEntity());
 		assertThat(token.getToken()).isEqualTo("123");
 		assertThat(token.getExpiryDate().getTime()).isLessThanOrEqualTo(new Date().getTime());
 		verify(tokenStoreRepository).findByTokenAndType("token", TokenStoreType.USER_ACTIVATION);

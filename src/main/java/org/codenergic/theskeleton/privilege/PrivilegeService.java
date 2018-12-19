@@ -15,31 +15,39 @@
  */
 package org.codenergic.theskeleton.privilege;
 
+import java.util.Optional;
+import java.util.Set;
+
 import javax.validation.constraints.NotNull;
 
-import org.codenergic.theskeleton.privilege.impl.PrivilegeServiceImpl;
+import org.codenergic.theskeleton.role.RoleEntity;
+import org.codenergic.theskeleton.user.UserAuthorityService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
 
-public interface PrivilegeService {
-	static PrivilegeService newInstance(PrivilegeRepository privilegeRepository) {
-		return new PrivilegeServiceImpl(privilegeRepository);
-	}
+public interface PrivilegeService extends UserAuthorityService<RolePrivilegeEntity> {
+	@PreAuthorize("hasAuthority('role_assign_privilege')")
+	RoleEntity addPrivilegeToRole(@NotNull String code, @NotNull String privilegeName);
 
 	@PreAuthorize("isAuthenticated()")
-	PrivilegeEntity findPrivilegeByName(@NotNull String name);
+	Optional<PrivilegeEntity> findPrivilegeById(@NotNull String id);
 
 	@PreAuthorize("isAuthenticated()")
-	PrivilegeEntity findPrivilegeById(@NotNull String id);
+	Optional<PrivilegeEntity> findPrivilegeByIdOrName(@NotNull String idOrName);
 
 	@PreAuthorize("isAuthenticated()")
-	PrivilegeEntity findPrivilegeByIdOrName(@NotNull String idOrName);
-
-	@PreAuthorize("isAuthenticated()")
-	Page<PrivilegeEntity> findPrivileges(Pageable pageable);
+	Optional<PrivilegeEntity> findPrivilegeByName(@NotNull String name);
 
 	@PreAuthorize("isAuthenticated()")
 	Page<PrivilegeEntity> findPrivileges(String keyword, Pageable pageable);
 
+	@PreAuthorize("isAuthenticated()")
+	Page<PrivilegeEntity> findPrivileges(Pageable pageable);
+
+	@PreAuthorize("hasAuthority('role_assign_privilege')")
+	Set<PrivilegeEntity> findPrivilegesByRoleCode(@NotNull String code);
+
+	@PreAuthorize("hasAuthority('role_assign_privilege')")
+	RoleEntity removePrivilegeFromRole(@NotNull String code, @NotNull String privilegeName);
 }

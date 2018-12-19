@@ -2,7 +2,7 @@
 [![codecov](https://codecov.io/gh/dianw/tlsfree/branch/master/graph/badge.svg)](https://codecov.io/gh/dianw/tlsfree)
 [![Quality Gate](https://sonarcloud.io/api/badges/gate?key=org.codenergic.theskeleton:theskeleton-server)](https://sonarcloud.io/dashboard/index/org.codenergic.theskeleton:theskeleton-server)
 
-# Enkrip
+# TheSkeleton
 The skeleton is the project starter based on spring boot.
 *This project is still work in progress.*
 

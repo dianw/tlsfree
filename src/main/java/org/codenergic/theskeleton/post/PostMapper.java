@@ -13,9 +13,25 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package org.codenergic.theskeleton.post;
 
-public enum PostStatus {
-	BLOCKED, DRAFT, PUBLISHED
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.factory.Mappers;
+
+@Mapper
+public interface PostMapper {
+	static PostMapper newInstance() {
+		return Mappers.getMapper(PostMapper.class);
+	}
+
+	@Mapping(target = "lastUpdatedDate", source = "lastModifiedDate")
+	@Mapping(target = "response", expression = "java(post.getResponseTo() != null)")
+	@Mapping(target = "responseTo", source = "responseTo.id")
+	PostRestData toPostData(PostEntity post);
+
+	@Mapping(target = "createdDate", ignore = true)
+	@Mapping(target = "response", ignore = true)
+	@Mapping(target = "responseTo", ignore = true)
+	PostEntity toPost(PostRestData postData);
 }

@@ -15,6 +15,9 @@
  */
 package org.codenergic.theskeleton.post;
 
+import java.util.Collections;
+import java.util.Optional;
+
 import org.codenergic.theskeleton.post.impl.PostServiceImpl;
 import org.codenergic.theskeleton.user.UserEntity;
 import org.junit.Before;
@@ -24,13 +27,7 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 
-import java.util.Arrays;
-import java.util.Collections;
-
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.codenergic.theskeleton.post.PostStatus.DRAFT;
-import static org.codenergic.theskeleton.post.PostStatus.PUBLISHED;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -39,15 +36,12 @@ import static org.mockito.Mockito.when;
 public class PostServiceTest {
 	static final PostEntity DUMMY_POST = new PostEntity()
 		.setId("123")
-		.setTitle("It's a disastah")
 		.setContent("some text are <b>bold</b>,<i>italic</i> or <u>underline</u>")
 		.setResponse(false)
 		.setPoster(new UserEntity());
 	static final PostEntity DUMMY_POST2 = new PostEntity()
 		.setId("12345")
-		.setTitle("Minas Tirith")
-		.setContent("Pippin looked out from the shelter of Gandalf\"s cloak. He wondered if he was awake")
-		.setSlug("testing");
+		.setContent("Pippin looked out from the shelter of Gandalf\"s cloak. He wondered if he was awake");
 
 	@Mock
 	private PostFollowingRepository postFollowingRepository;
@@ -68,6 +62,17 @@ public class PostServiceTest {
 	}
 
 	@Test
+	public void testFindPostByContentContaining() {
+		Page<PostEntity> dbResult = new PageImpl<>(Collections.singletonList(DUMMY_POST));
+		when(postRepository.findByContentContaining(eq("disastah"), any()))
+			.thenReturn(dbResult);
+		Page<PostEntity> result = postService.findPostByContentContaining("disastah", null);
+		assertThat(result.getNumberOfElements()).isEqualTo(1);
+		assertThat(result).isEqualTo(dbResult);
+		verify(postRepository).findByContentContaining(eq("disastah"), any());
+	}
+
+	@Test
 	public void testFindPostByFollowerId() {
 		Page<PostEntity> dbResult = new PageImpl<>(Collections.singletonList(DUMMY_POST));
 		when(postFollowingRepository.findByFollowerId(eq("123"), any())).thenReturn(dbResult);
@@ -77,30 +82,17 @@ public class PostServiceTest {
 
 	@Test
 	public void testFindPostById() {
-		when(postRepository.findOne("123")).thenReturn(DUMMY_POST2);
-		assertThat(postService.findPostById("123")).isEqualTo(DUMMY_POST2);
-		verify(postRepository).findOne("123");
+		when(postRepository.findById("123")).thenReturn(Optional.of(DUMMY_POST2));
+		assertThat(postService.findPostById("123")).isEqualTo(Optional.of(DUMMY_POST2));
+		verify(postRepository).findById("123");
 	}
 
 	@Test
-	public void testFindPostByPosterAndStatus() {
-		when(postRepository.findByPosterIdAndPostStatus(eq("1234"), eq(PUBLISHED), any()))
-			.thenReturn(new PageImpl<>(Arrays.asList(DUMMY_POST, DUMMY_POST2)));
-		Page<PostEntity> posts = postService.findPostByPosterAndStatus("1234", PUBLISHED, null);
-		assertThat(posts).hasSize(2);
-		assertThat(posts).containsExactly(DUMMY_POST, DUMMY_POST2);
-		verify(postRepository).findByPosterIdAndPostStatus(eq("1234"), eq(PUBLISHED), any());
-	}
-
-	@Test
-	public void testFindPostByTitleContaining() {
+	public void testFindPostByPoster() {
 		Page<PostEntity> dbResult = new PageImpl<>(Collections.singletonList(DUMMY_POST));
-		when(postRepository.findByTitleContaining(eq("disastah"), any()))
-			.thenReturn(dbResult);
-		Page<PostEntity> result = postService.findPostByTitleContaining("disastah", null);
-		assertThat(result.getNumberOfElements()).isEqualTo(1);
-		assertThat(result).isEqualTo(dbResult);
-		verify(postRepository).findByTitleContaining(eq("disastah"), any());
+		when(postRepository.findByPosterId(eq("user"), any())).thenReturn(dbResult);
+		assertThat(postService.findPostByPosterId("user", null)).isEqualTo(dbResult);
+		verify(postRepository).findByPosterId(eq("user"), any());
 	}
 
 	@Test
@@ -112,35 +104,13 @@ public class PostServiceTest {
 	}
 
 	@Test
-	public void testFindPublishedPostByPoster() {
-		Page<PostEntity> dbResult = new PageImpl<>(Collections.singletonList(DUMMY_POST));
-		when(postRepository.findByPosterIdAndPostStatus(eq("user"), eq(PUBLISHED), any())).thenReturn(dbResult);
-		assertThat(postService.findPublishedPostByPoster("user", null)).isEqualTo(dbResult);
-		verify(postRepository).findByPosterIdAndPostStatus(eq("user"), eq(PUBLISHED), any());
-	}
-
-	@Test
-	public void testPublishAndUnPublishPost() {
-		when(postRepository.findOne("1234")).thenReturn(null);
-		assertThatThrownBy(() -> postService.publishPost("1234")).isInstanceOf(IllegalArgumentException.class);
-		verify(postRepository).findOne("1234");
-		when(postRepository.findOne("123")).thenReturn(new PostEntity().setPostStatus(DRAFT));
-		assertThat(postService.publishPost("123").getPostStatus()).isEqualTo(PUBLISHED);
-		verify(postRepository).findOne("123");
-		when(postRepository.findOne("321")).thenReturn(new PostEntity().setPostStatus(PUBLISHED));
-		assertThat(postService.unPublishPost("321").getPostStatus()).isEqualTo(DRAFT);
-		verify(postRepository).findOne("321");
-	}
-
-	@Test
 	public void testReplyPost() {
-		when(postRepository.findOne("123")).thenReturn(DUMMY_POST);
+		when(postRepository.findById("123")).thenReturn(Optional.of(DUMMY_POST));
 		when(postRepository.save(any(PostEntity.class))).then(invocation -> invocation.getArgument(0));
 		PostEntity reply = postService.replyPost("123", DUMMY_POST2);
 		assertThat(reply.isResponse()).isTrue();
 		assertThat(reply.getResponseTo()).isEqualTo(DUMMY_POST);
-		assertThat(reply.getSlug()).isNotEmpty();
-		verify(postRepository).findOne("123");
+		verify(postRepository).findById("123");
 		verify(postRepository).save(any(PostEntity.class));
 	}
 
@@ -154,8 +124,8 @@ public class PostServiceTest {
 
 	@Test
 	public void testUpdatePost() {
-		when(postRepository.findOne(eq("123"))).thenReturn(DUMMY_POST2);
+		when(postRepository.findById(eq("123"))).thenReturn(Optional.of(DUMMY_POST2));
 		assertThat(postService.updatePost("123", DUMMY_POST2)).isEqualTo(DUMMY_POST2);
-		verify(postRepository).findOne(eq("123"));
+		verify(postRepository).findById(eq("123"));
 	}
 }

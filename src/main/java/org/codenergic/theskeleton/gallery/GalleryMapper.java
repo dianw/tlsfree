@@ -13,25 +13,18 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.codenergic.theskeleton.core.web;
+package org.codenergic.theskeleton.gallery;
 
-import org.springframework.core.annotation.AliasFor;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.factory.Mappers;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+@Mapper
+interface GalleryMapper {
+	static GalleryMapper newInstance() {
+		return Mappers.getMapper(GalleryMapper.class);
+	}
 
-/**
- * Annotation that is used to resolve {@link org.springframework.security.core.userdetails.UserDetails}
- * to a method parameter.
- */
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.PARAMETER)
-public @interface User {
-	@AliasFor("parameterName")
-	String value() default "username";
-
-	@AliasFor("value")
-	String parameterName() default "username";
+	@Mapping(target = "userId", source = "createdBy.userId")
+	GalleryRestData toGalleryData(GalleryEntity gallery);
 }
